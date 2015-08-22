@@ -1,0 +1,12 @@
+alias n S0;
+alias i S1;
+print "enter the value of n";
+read n;
+i=1;
+while(i<=n) do
+if(i%2!=0) then 
+print i;
+endif;
+i=i+1;
+endwhile;
+
