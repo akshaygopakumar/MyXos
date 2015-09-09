@@ -1,4 +1,4 @@
-breakpoint;
+breakpoint; //for debugging
 alias physicalSP S0;
 alias i S2;
 alias j S3;
@@ -6,23 +6,25 @@ alias basic_block S4;
 alias filename S5;
 alias disk_free_entry S6;
 alias returnvalue S7;
-physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculated the PhysicalSP
 alias sysCallNo S1;
-sysCallNo = [physicalSP-1];
-filename = [physicalSP-3];
-returnvalue = physicalSP-2;
+sysCallNo = [physicalSP-1]; //calculate the system call No 
+filename = [physicalSP-3]; //determine the filename
+returnvalue = physicalSP-2; //Return address
+//	CREATE System Call
 if(sysCallNo==1) then
 	i=FAT;
 	while ( i < 3071 ) do
-		if ([i]==filename) then
+		if ([i]==filename) then //the file already exists
 			[returnvalue]=0;
 			ireturn;
 			break;
 		endif;
 	i=i+8;
 	endwhile;
-	i=DISK_LIST;
-	while (i < 3583 ) do 
+	i=DISK_LIST; //Disk Free list constant
+	//Checking if there is free disk space
+	while (i < 3519 ) do 
 		if([i]==0) then
 			basic_block=i-3072;
 			disk_free_entry=i;
@@ -30,11 +32,12 @@ if(sysCallNo==1) then
 		endif;
 		i=i+1;
 	endwhile;
-	if (i==3583) then
+	if (i==3519) then
 		[returnvalue]=-1;
 		ireturn;
 	endif;
 	breakpoint;
+	// Modifying the fat entry
 	i=FAT+2;
 	while ( i < 3071 ) do
 		if ([i]==-1) then
@@ -49,15 +52,16 @@ if(sysCallNo==1) then
 		[returnvalue]=-1;
 		ireturn;
 	endif;
+	//scratch_pad
 	i=512;
-	load(1,basic_block);
+	load(1,basic_block); //load the basic block to memory
 	while (i<1023) do
 		[i]=-1;
 		i=i+1;
 	endwhile;	
-	store(1,basic_block);	
+	store(1,basic_block); //store it back to disk
 	[disk_free_entry]=1;
-	store(5,19);
+	store(5,19); 
 	store(6,20);
 	[returnvalue]=0;
 	ireturn;
