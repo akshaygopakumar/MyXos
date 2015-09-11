@@ -22,8 +22,27 @@ SP = 3 * 512; //set the logical address of stack pointer to 3
 [28 * 512] = 0; //IP set to 0
 load(11,5); //interrupt 1
 load(12,6);
+load(13,7); //interrupt 2
+load(14,8);
+load(15,9); //interrupt 3
+load(16,10);
+load(17,11); //interrupt 4
+load(18,12);
 load (9, 3); 	//timer interrupt
 load (10, 4);	//
 load (5,19);	//FAT
 load (6,20);	//Disk Free list
+alias counter S0;			
+counter = 0;
+while ( counter <  128) do			// 64 entries, each of size 2 words
+	[ FILE_TABLE + counter + 0] = -1;	// Set FAT Index to -1
+	[ FILE_TABLE + counter + 1] =  0;	// Set File Open Count to 0
+	counter = counter + 2;			// Move to next entry
+endwhile;	
+counter=0;
+while ( counter < 16 ) do
+	[READY_LIST + counter + 15] = -1; // Set Process File Table entry as 1
+	counter = counter + 1; //Move to next entry
+endwhile;
+
 ireturn;
