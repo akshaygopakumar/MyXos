@@ -3,7 +3,7 @@ decl
 enddecl
 integer main()
 {
-	status = Create("OsIssoso.dat");
+	status = Create("Myfile.dat");
 	print(status);
 	return 0;
 }

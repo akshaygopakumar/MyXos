@@ -6,7 +6,7 @@ JMP 00010
 PUSH BP
 MOV BP,SP
 MOV R0, 1536
-MOV R1, "OsIssoso.dat"
+MOV R1, "Myfile.dat"
 PUSH R1
 PUSH R0
 MOV R1, 1
