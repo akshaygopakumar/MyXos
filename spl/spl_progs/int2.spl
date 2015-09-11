@@ -1,0 +1,99 @@
+//Declaring the variables \\
+alias physicalSP S0;
+alias sysCallNo S1;
+alias i S2;
+alias j S3;
+alias filename S4;
+alias returnvalue S5;
+alias Fat_Entry S6;
+alias PI S9;
+alias PCB S10;
+
+
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculated the PhysicalSP
+
+sysCallNo = [physicalSP-1]; //calculate the system call No 
+
+filename = [physicalSP-3]; //determine the filename
+
+returnvalue = physicalSP-2; //Return address
+
+//	CREATE System Call  \\
+if(sysCallNo==2) then
+	i=0;
+	// check if the file exists in the FAT table
+	while (i < 64) do
+		if ([FAT + i*8] == filename) then
+			Fat_Entry = i;
+			break;
+		else
+		i = i + 1;
+		endif;
+	endwhile;
+	if(i >= 64) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	// If the file does	exist then update the System wide open file table accordingly
+	alias System_Table S7;
+	alias Index S8;
+	System_Table = 1344 ; // System wide open file table is located at 1344
+	i = 0;
+	while ( i < 64 ) do
+		if ( [System_Table + i*2] == Fat_Entry ) then
+				Index = i;
+				break;
+		else
+			i = i + 1 ;
+		endif;
+	endwhile;
+	//checks whether there is already in the Table
+	if ( i >= 64 ) then 
+		i=0;
+		while ( i < 64 ) do
+			if ( [System_Table + i*2] == -1 ) then
+				Index = i;
+				break;
+			else
+				i = i+1 ;
+			endif;
+		endwhile;
+		if (i == 64) then 
+			[returnvalue] = -1;
+			ireturn;
+		endif;
+//[System_Table + Index*2 + 1] = 0;
+	endif;
+	//Setting the per process table (PCB)
+		//finding the processID
+	PI = (PTBR-1024)/8;
+	PCB = READY_LIST + 32 * PI;
+		//We have to check whether the Per Process Table Entry 
+	i=0;
+	while ( i < 8 ) do
+		if ( [PCB + 15 + i*2] == -1) then
+			[PCB + 15 + i*2] = Index;
+			[PCB + 15 + i*2 + 1] = 0;
+			break;
+		else
+			i=i+1;
+		endif;
+	endwhile;
+	if(i == 8) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	[System_Table + Index*2] = Fat_Entry;
+	[System_Table + Index*2 + 1] = [System_Table + Index*2 + 1] + 1;
+	[returnvalue] = i;
+	ireturn;
+endif;
+	
+	
+	
+		
+	
+		
+
+
+			
