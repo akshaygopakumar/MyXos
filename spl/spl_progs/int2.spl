@@ -2,25 +2,31 @@
 alias physicalSP S0;
 alias sysCallNo S1;
 alias i S2;
-alias j S3;
-alias filename S4;
+
+
 alias returnvalue S5;
 alias Fat_Entry S6;
 alias PI S9;
 alias PCB S10;
 
+//calculating the Process_Id
+PI = (PTBR-1024)/8;
+//calculating the PCB
+PCB = READY_LIST + 32 * PI;
 
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculated the PhysicalSP
 
 sysCallNo = [physicalSP-1]; //calculate the system call No 
 
-filename = [physicalSP-3]; //determine the filename
+
 
 returnvalue = physicalSP-2; //Return address
 
 //	CREATE System Call  \\
 if(sysCallNo==2) then
 	i=0;
+	alias filename S4;
+	filename = [physicalSP-3]; //determine the filename
 	// check if the file exists in the FAT table
 	while (i < 64) do
 		if ([FAT + i*8] == filename) then
@@ -34,7 +40,8 @@ if(sysCallNo==2) then
 		[returnvalue] = -1;
 		ireturn;
 	endif;
-	// If the file does	exist then update the System wide open file table accordingly
+	// If the file does	exist
+	// then update the System wide open file table accordingly
 	alias System_Table S7;
 	alias Index S8;
 	System_Table = 1344 ; // System wide open file table is located at 1344
@@ -62,12 +69,10 @@ if(sysCallNo==2) then
 			[returnvalue] = -1;
 			ireturn;
 		endif;
-//[System_Table + Index*2 + 1] = 0;
 	endif;
 	//Setting the per process table (PCB)
 		//finding the processID
-	PI = (PTBR-1024)/8;
-	PCB = READY_LIST + 32 * PI;
+	
 		//We have to check whether the Per Process Table Entry 
 	i=0;
 	while ( i < 8 ) do
@@ -88,6 +93,40 @@ if(sysCallNo==2) then
 	[returnvalue] = i;
 	ireturn;
 endif;
+if (sysCallNo == 3) then
+	//Close system Call - Argument - File descriptor \\
+	alias File_desc S4;
+	File_desc = [physicalSP-3]; //determine the file descriptor number
+	//Checking if the file descriptor is valid
+	if (File_desc < 0 ) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	if (File_desc > 7 ) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	alias System_Table_Index S8;
+	System_Table_Index= [PCB + 15 + File_desc*2];
+	if ( System_Table_Index == -1) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	alias File_Count S3;
+	//Index into systen wide open file table
+	File_Count = [1344 + System_Table_Index * 2 + 1];
+	File_Count = File_Count -1 ;
+	if ( File_Count == 0 ) then
+		[1344 + System_Table_Index * 2 ] = -1;
+	endif;
+	[PCB + 15 + File_desc*2]=-1;
+	[returnvalue] = 0;
+	ireturn;
+endif;
+	
+	
+		
+		
 	
 	
 	
