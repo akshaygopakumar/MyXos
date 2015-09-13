@@ -2,8 +2,6 @@
 alias physicalSP S0;
 alias sysCallNo S1;
 alias i S2;
-
-
 alias returnvalue S5;
 alias Fat_Entry S6;
 alias PI S9;
@@ -22,7 +20,7 @@ sysCallNo = [physicalSP-1]; //calculate the system call No
 
 returnvalue = physicalSP-2; //Return address
 
-//	CREATE System Call  \\
+//	OPEN System Call  \\
 if(sysCallNo==2) then
 	i=0;
 	alias filename S4;
