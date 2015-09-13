@@ -34,13 +34,10 @@ if (sysCallNo == 6) then
 //......................................................................//
 //.............Indexing into the pointer to the SWOpen table............//
 
-	System_Table_Index= [PCB + 15 + fileDescriptor*2];
+	System_Table_Index = [PCB + 15 + fileDescriptor*2];
 	if ( System_Table_Index == -1) then
 		[returnvalue] = -1;
 		ireturn;
-	else
-						
-		LSEEK_POSITION = PCB + 15 + fileDescriptor*2 + 1 ;
 	endif;
 //......................................................................//
 
@@ -62,7 +59,7 @@ if (sysCallNo == 6) then
 
 //...............Changing to the newLseek position......................//
 
-	[LSEEK_POSITION] = newLseek ;
+	[PCB + 15 + fileDescriptor*2 + 1] = newLseek ;
 	[returnvalue]=0;
 	ireturn;
 //......................................................................//
