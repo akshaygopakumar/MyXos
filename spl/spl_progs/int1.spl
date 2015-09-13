@@ -1,18 +1,20 @@
 breakpoint; //for debugging
 alias physicalSP S0;
+alias sysCallNo S1;
 alias i S2;
-alias j S3;
 alias basic_block S4;
 alias filename S5;
-alias disk_free_entry S6;
 alias returnvalue S7;
-physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculated the PhysicalSP
-alias sysCallNo S1;
-sysCallNo = [physicalSP-1]; //calculate the system call No 
-filename = [physicalSP-3]; //determine the filename
-returnvalue = physicalSP-2; //Return address
+////////////////////////////////////////////////////////////////////////////////////////////////
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); //calculated the PhysicalSP         /
+sysCallNo = [physicalSP-1]; //calculate the system call No 									   /
+filename = [physicalSP-3]; //determine the filename											   /
+returnvalue = physicalSP-2; //Return address												   /
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 //	CREATE System Call
 if(sysCallNo==1) then
+	alias disk_free_entry S6;
 	i=FAT;
 	while ( i < 3071 ) do
 		if ([i]==filename) then //the file already exists
@@ -61,8 +63,77 @@ if(sysCallNo==1) then
 	endwhile;	
 	store(1,basic_block); //store it back to disk
 	[disk_free_entry]=1;
-	store(5,19); 
+	store(5,19); 	
 	store(6,20);
 	[returnvalue]=0;
 	ireturn;
 endif;
+if (sysCallNo == 4) then
+	//DELETE System call
+	i=0;
+	alias Basic_Block S6;
+	alias Fat_Index S3;
+	alias j S10;
+	alias DATA_BLOCK S11;
+	while (i  < 64 ) do
+		if ( [i*8 + FAT] ==filename ) then
+			Fat_Index = i;
+			break;
+		else 
+			i = i + 1;
+		endif;
+	endwhile;
+	if ( i == 64 ) then
+		[returnvalue]=-1;
+		ireturn;
+	endif;
+	i = 0;
+	while ( i < 64 ) do
+		if ( [FILE_TABLE + i*2] == Fat_Index ) then
+				[returnvalue] = -1;
+				ireturn;
+		else
+			i = i + 1 ;
+		endif;
+	endwhile;
+	Basic_Block = [ FAT + Fat_Index * 8 + 2 ];
+	load ( 1 ,Basic_Block ); //load the basic Block to the scratchpad
+	i = 0;
+	while ( i < 256 ) do
+		DATA_BLOCK = [ SCRATCHPAD + i ] ;  // The Data block number
+		if ( DATA_BLOCK != -1 ) then
+			load ( 1, DATA_BLOCK ); 		    // Load it into the scratch_pad	
+			j = 512 ;						    // Make every entry to an empty string
+			while ( j < 1023) do
+				[j] = "";
+				j = j + 1;
+			endwhile;
+			store ( 1 , DATA_BLOCK );			// Store the datablock back to disk
+			[ DISK_LIST + DATA_BLOCK ] = 0;			// Set disk_free_entry to 0 (unused)
+		endif;
+		load ( 1 , Basic_Block );			// Load the Basic_Block back to scratch_pad 
+		i = i + 1;							// Increment i for the next data_block
+	endwhile;
+	load ( 1 , Basic_Block );				// Load the Basic_Block to make it empty
+	i = 512;								// Set the basic_block to 0
+	while ( i < 1023) do
+		[i] = "";
+		i = i + 1;
+	endwhile;
+	store ( 1 , Basic_Block );				// Store the basic_block back to disk
+	[DISK_LIST + Basic_Block]= 0;			// Set disk_free_entry of basic_block to zero
+	[ FAT + Fat_Index * 8 + 2 ] = -1 ;		// Invalidate the Fat_Entry to 
+	[ FAT + Fat_Index * 8] = -1 ;
+	store(5,19); 	
+	store(6,20);
+	[returnvalue]=0;
+	ireturn;
+endif;	
+	
+		
+		
+		
+		
+	 
+		
+			
