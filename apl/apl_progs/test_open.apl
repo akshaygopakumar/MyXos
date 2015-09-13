@@ -3,11 +3,11 @@ integer main()
 	integer c ;
 	integer b ;
 	integer a ;
-	a = Open("sample.dat");
-	print (a);
 	c = Open("sample1.dat");
 	print(c); 
-	b = Close(1);
+	b = Close(0);
 	print (b);
+	a = Delete("sample1.dat");
+	print (a);	
 	return 0;
 }
