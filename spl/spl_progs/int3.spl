@@ -11,7 +11,9 @@ alias System_Table_Index S8;
 alias newLseek S9;	
 alias fileSize S10;
 alias LSEEK_POSITION S11;	
-
+alias Basic_Block S12;
+alias dataBlock S13;
+alias wordRead S14;
 //calculating the Process_Id
 PI = (PTBR-1024)/8;
 //calculating the PCB
@@ -19,7 +21,7 @@ PCB = READY_LIST + 32 * PI;
 physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512); 	// Calculated the PhysicalSP
 sysCallNo = [physicalSP-1]; 								// Calculate the system call No 
 returnvalue = physicalSP-2;								 	// Return address
-newLseek = [physicalSP - 3]; 								// The word to write 
+
 fileDescriptor = [physicalSP - 4];							// The file descriptor of the open file instance.
 if (sysCallNo == 6) then	
 // Checking if the file descriptor is valid............................//
@@ -46,6 +48,8 @@ if (sysCallNo == 6) then
 	fileSize = [ FAT + Fat_Entry * 8 + 1 ];
 //......................................................................//
 
+newLseek = [physicalSP - 3]; 								// The word to write 
+
 //..............Checking whether the LSEEK position is valid............//
 	if (newLseek < 0 ) then
 		[returnvalue] = -1;
@@ -65,5 +69,54 @@ if (sysCallNo == 6) then
 //......................................................................//
 endif;
 	
+//.......................................................READ.............................................................//
+if (sysCallNo ==7 ) then
+	wordRead = physicalSP - 3 ;
+// Checking if the file descriptor is valid............................//
+	if (fileDescriptor < 0 ) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+	if (fileDescriptor > 7 ) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+//......................................................................//
+
+//.............Indexing into the pointer to the SWOpen table............//
+
+	System_Table_Index= [PCB + 15 + fileDescriptor*2];
+	if ( System_Table_Index == -1) then
+		[returnvalue] = -1;
+		ireturn;
+	else						
+		LSEEK_POSITION = [PCB + 15 + fileDescriptor*2 + 1] ;
+	endif;
+//......................................................................//
+
+
+//..............Calculating the FAT Entry...............................//
+	Fat_Entry = [FILE_TABLE + System_Table_Index * 2 ];
+	fileSize = [ FAT + Fat_Entry * 8 + 1 ];	
+	Basic_Block = [ FAT + Fat_Entry * 8 + 2 ];
+	load ( 1 , Basic_Block );       // Load the Basic_Block into the scratchpad
+//......................................................................//
+
+//..............Checking whether the LSEEK position is valid............//
+	if (LSEEK_POSITION == fileSize ) then
+		[returnvalue] = -1;
+		ireturn;
+	endif;
+//......................................................................//	
+
+//..............The Actual Process......................................//
+	dataBlock = [SCRATCHPAD + LSEEK_POSITION/512]; 		// This is the data block where the actual data writing takes place
+	load ( 1, dataBlock);
+	[wordRead] = [SCRATCHPAD + LSEEK_POSITION%512] ;
+	store ( 1 , dataBlock );							// Storing the data block to the disk
+	[PCB + 15 + fileDescriptor*2 + 1] = LSEEK_POSITION + 1;  // Incrementing the LSEEK entry 
+	[returnvalue]=0;
+	ireturn;
 	
+endif;
 	
